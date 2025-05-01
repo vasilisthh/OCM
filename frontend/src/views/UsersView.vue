@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { userService } from '../services/api';
+import UserModal from '../components/UserModal.vue';
 
 const users = ref<any[]>([]);
 const isLoading = ref(false);
@@ -8,6 +9,39 @@ const error = ref('');
 const searchQuery = ref('');
 const currentPage = ref(1);
 const usersPerPage = 15;
+
+const isModalOpen = ref(false);
+const isEditing = ref(false);
+const selectedUser = ref<any>(null);
+
+const openAddUserModal = () => {
+  selectedUser.value = null;
+  isEditing.value = false;
+  isModalOpen.value = true;
+};
+
+const openEditUserModal = (user: any) => {
+  selectedUser.value = user;
+  isEditing.value = true;
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+};
+
+const handleUserAdded = (user: any) => {
+  users.value.unshift(user);
+  alert('User added successfully!');
+};
+
+const handleUserUpdated = (updatedUser: any) => {
+  const index = users.value.findIndex(u => u.id === updatedUser.id);
+  if (index !== -1) {
+    users.value[index] = updatedUser;
+  }
+  alert('User updated successfully!');
+};
 
 const fetchUsers = async () => {
   isLoading.value = true;
@@ -92,6 +126,7 @@ onMounted(() => {
     <div class="d-flex justify-between align-center mb-4">
       <h1>User Management</h1>
       <button class="btn btn--primary btn--sm" @click="fetchFromApi">Fetch From External API</button>
+      <button class="btn btn--primary btn--sm" @click="openAddUserModal">Add User</button>
     </div>
 
     <div class="mb-3">
@@ -167,4 +202,14 @@ onMounted(() => {
       </button>
     </div>
   </div>
+
+  <UserModal
+  :is-open="isModalOpen"
+  :is-editing="isEditing"
+  :user-data="selectedUser"
+  @close="closeModal"
+  @user-added="handleUserAdded"
+  @user-updated="handleUserUpdated"
+/>
+
 </template>
