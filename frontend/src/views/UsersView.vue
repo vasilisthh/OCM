@@ -229,7 +229,10 @@ onMounted(() => {
             <td>{{ user.phone }}</td>
             <td>{{ user.website }}</td>
             <td>
-              <button class="btn btn--error btn--sm" @click="openDeleteConfirmModal(user.id)">Delete</button>
+              <div class="d-flex gap-2">
+                <button class="btn btn--primary btn--sm" @click="openEditUserModal(user)">Edit</button>
+                <button class="btn btn--error btn--sm" @click="openDeleteConfirmModal(user.id)">Delete</button>
+              </div>
             </td>
           </tr>
         </tbody>
