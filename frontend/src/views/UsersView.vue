@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { userService } from '../services/api';
 import UserModal from '../components/UserModal.vue';
+import ConfirmModal from '../components/ConfirmModal.vue';
+import Notification from '../components/Notification.vue';
 
 const users = ref<any[]>([]);
 const isLoading = ref(false);
@@ -10,9 +12,31 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const usersPerPage = 15;
 
+// User modal state
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const selectedUser = ref<any>(null);
+
+// Confirm modal state
+const isConfirmModalOpen = ref(false);
+const confirmModalTitle = ref('');
+const confirmModalMessage = ref('');
+const userToDelete = ref<number | null>(null);
+
+// Notification state
+const notificationMessage = ref('');
+const notificationType = ref('success');
+const isNotificationVisible = ref(false);
+
+const showNotification = (message: string, type: string = 'success') => {
+  notificationMessage.value = message;
+  notificationType.value = type;
+  isNotificationVisible.value = true;
+};
+
+const hideNotification = () => {
+  isNotificationVisible.value = false;
+};
 
 const openAddUserModal = () => {
   selectedUser.value = null;
@@ -32,7 +56,7 @@ const closeModal = () => {
 
 const handleUserAdded = (user: any) => {
   users.value.unshift(user);
-  alert('User added successfully!');
+  showNotification('User added successfully!');
 };
 
 const handleUserUpdated = (updatedUser: any) => {
@@ -40,7 +64,7 @@ const handleUserUpdated = (updatedUser: any) => {
   if (index !== -1) {
     users.value[index] = updatedUser;
   }
-  alert('User updated successfully!');
+  showNotification('User updated successfully!');
 };
 
 const fetchUsers = async () => {
@@ -64,7 +88,7 @@ const fetchFromApi = async () => {
   try {
     const response = await userService.fetchFromApi();
     await fetchUsers();
-    alert('Users fetched from external API successfully!');
+    showNotification('Users fetched from external API successfully!');
   } catch (err: any) {
     let errorMessage = 'Failed to fetch users from external API.';
     if (err.response) {
@@ -75,22 +99,46 @@ const fetchFromApi = async () => {
       errorMessage += ` Error: ${err.message}`;
     }
     
-    alert(errorMessage);
+    showNotification(errorMessage, 'error');
     error.value = errorMessage;
   } finally {
     isLoading.value = false;
   }
 };
 
-const deleteUser = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this user?')) return;
+const openDeleteConfirmModal = (id: number) => {
+  userToDelete.value = id;
+  confirmModalTitle.value = 'Confirm Delete';
+  confirmModalMessage.value = 'Are you sure you want to delete this user? This action cannot be undone.';
+  isConfirmModalOpen.value = true;
+};
 
+const closeConfirmModal = () => {
+  isConfirmModalOpen.value = false;
+  userToDelete.value = null;
+};
+
+const confirmDelete = async () => {
+  if (userToDelete.value === null) return;
+  
   try {
-    await userService.deleteUser(id);
-    users.value = users.value.filter(user => user.id !== id);
-    alert('User deleted successfully!');
+    isLoading.value = true;
+    
+    const response = await userService.deleteUser(userToDelete.value);
+    
+    if (response.status === 200) {
+      // After successful deletion, fetch the updated list
+      await fetchUsers();
+      
+      closeConfirmModal();
+      showNotification('User deleted successfully!');
+    } else {
+      throw new Error('Failed to delete user');
+    }
   } catch (err: any) {
-    alert('Failed to delete user.');
+    showNotification('Failed to delete user: ' + (err.message || 'Unknown error'), 'error');
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -181,7 +229,7 @@ onMounted(() => {
             <td>{{ user.phone }}</td>
             <td>{{ user.website }}</td>
             <td>
-              <button class="btn btn--error btn--sm" @click="deleteUser(user.id)">Delete</button>
+              <button class="btn btn--error btn--sm" @click="openDeleteConfirmModal(user.id)">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -216,13 +264,30 @@ onMounted(() => {
     </div>
   </div>
 
+  <!-- User Modal -->
   <UserModal
-  :is-open="isModalOpen"
-  :is-editing="isEditing"
-  :user-data="selectedUser"
-  @close="closeModal"
-  @user-added="handleUserAdded"
-  @user-updated="handleUserUpdated"
-/>
+    :is-open="isModalOpen"
+    :is-editing="isEditing"
+    :user-data="selectedUser"
+    @close="closeModal"
+    @user-added="handleUserAdded"
+    @user-updated="handleUserUpdated"
+  />
 
+  <!-- Confirmation Modal -->
+  <ConfirmModal
+    :is-open="isConfirmModalOpen"
+    :title="confirmModalTitle"
+    :message="confirmModalMessage"
+    @close="closeConfirmModal"
+    @confirm="confirmDelete"
+  />
+
+  <!-- Notification -->
+  <Notification
+    :message="notificationMessage"
+    :type="notificationType"
+    :visible="isNotificationVisible"
+    @hide="hideNotification"
+  />
 </template>

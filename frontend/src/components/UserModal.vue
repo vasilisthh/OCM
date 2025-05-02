@@ -6,6 +6,10 @@
           <button class="close-button" @click="closeModal">&times;</button>
         </div>
         <div class="modal-body">
+          <div v-if="formError" class="error-box mb-3">
+            {{ formError }}
+          </div>
+          
           <form @submit.prevent="submitForm">
             <div class="form-group">
               <label for="name">Name*</label>
@@ -103,6 +107,7 @@
   } as Record<string, string>);
   
   const isSubmitting = ref(false);
+  const formError = ref('');
   
   watch(() => props.isOpen, (isOpen) => {
     if (isOpen) {
@@ -145,6 +150,7 @@
     if (!validateForm()) return;
   
     isSubmitting.value = true;
+    formError.value = '';
   
     try {
       let response;
@@ -183,7 +189,7 @@
         errorMessage = `Error: ${error.message}`;
       }
       
-      alert(errorMessage);
+      formError.value = errorMessage;
     } finally {
       isSubmitting.value = false;
     }
@@ -201,12 +207,25 @@
     form.username = '';
     form.phone = '';
     form.website = '';
+    formError.value = '';
   };
   
   const clearErrors = () => {
     errors.name = '';
     errors.email = '';
     errors.username = '';
+    formError.value = '';
   };
   </script>
+  
+  <style scoped>
+  .error-box {
+    background-color: #ffebee;
+    color: #d32f2f;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border: 1px solid #f5c6cb;
+  }
+  </style>
   

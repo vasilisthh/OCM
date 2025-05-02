@@ -156,21 +156,51 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+        Log::info('Attempting to delete user', ['id' => $id]);
+        
         $user = User::find($id);
         
         if (!$user) {
+            Log::warning('User not found for deletion', ['id' => $id]);
             return response()->json([
                 'status' => 'error',
                 'message' => 'User not found'
             ], 404);
         }
         
-        $user->delete();
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => 'User deleted successfully'
-        ]);
+        try {
+            $userName = $user->name;
+            $userId = $user->id;
+            
+            $deleted = $user->delete();
+            
+            Log::info('User deletion result', [
+                'id' => $userId,
+                'name' => $userName,
+                'deleted' => $deleted
+            ]);
+            
+            if (!$deleted) {
+                throw new \Exception('Failed to delete user');
+            }
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User deleted successfully',
+                'id' => $userId
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting user', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete user: ' . $e->getMessage()
+            ], 500);
+        }
     }
     
     /**
