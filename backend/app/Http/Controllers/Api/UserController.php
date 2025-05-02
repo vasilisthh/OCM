@@ -180,26 +180,37 @@ class UserController extends Controller
      */
     public function fetch()
     {
-        $result = $this->userService->fetchUsersFromApi();
-        
-        if (!$result['success']) {
+        try {
+            $result = $this->userService->fetchUsersFromApi();
+            
+            if (!$result['success']) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $result['error']
+                ], 500);
+            }
+            
+            $storedResult = $this->userService->storeFetchedUsers($result['data']);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Users fetched and stored successfully',
+                'data' => [
+                    'fetched_count' => count($result['data']),
+                    'created' => $storedResult['created'],
+                    'updated' => $storedResult['updated'],
+                    'failed' => $storedResult['failed']
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in fetch method: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'status' => 'error',
-                'message' => $result['error']
+                'message' => 'An error occurred while processing your request: ' . $e->getMessage()
             ], 500);
         }
-        
-        $storedResult = $this->userService->storeFetchedUsers($result['data']);
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Users fetched and stored successfully',
-            'data' => [
-                'fetched_count' => count($result['data']),
-                'created' => $storedResult['created'],
-                'updated' => $storedResult['updated'],
-                'failed' => $storedResult['failed']
-            ]
-        ]);
     }
 } 

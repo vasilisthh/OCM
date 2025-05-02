@@ -100,7 +100,7 @@
     name: '',
     email: '',
     username: ''
-  });
+  } as Record<string, string>);
   
   const isSubmitting = ref(false);
   
@@ -158,8 +158,32 @@
       }
   
       closeModal();
-    } catch (error) {
-      alert('Error saving user. Please check your inputs and try again.');
+    } catch (error: any) {
+      let errorMessage = 'Error saving user. Please check your inputs and try again.';
+      
+      if (error.response) {
+        // Handle validation errors from backend
+        if (error.response.status === 422 && error.response.data.errors) {
+          const validationErrors = error.response.data.errors;
+          
+          // Update the errors object with backend validation errors
+          Object.keys(validationErrors).forEach(field => {
+            if (field in errors) {
+              errors[field] = validationErrors[field][0];
+            }
+          });
+          
+          errorMessage = 'Please correct the validation errors.';
+        } else {
+          errorMessage = `Error: ${error.response.data.message || 'Unknown server error'}`;
+        }
+      } else if (error.request) {
+        errorMessage = 'No response from server. Check if backend is running.';
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       isSubmitting.value = false;
     }

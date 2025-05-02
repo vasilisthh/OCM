@@ -59,13 +59,24 @@ const fetchUsers = async () => {
 
 const fetchFromApi = async () => {
   isLoading.value = true;
+  error.value = '';
 
   try {
-    await userService.fetchFromApi();
+    const response = await userService.fetchFromApi();
     await fetchUsers();
     alert('Users fetched from external API successfully!');
   } catch (err: any) {
-    alert('Failed to fetch users from external API.');
+    let errorMessage = 'Failed to fetch users from external API.';
+    if (err.response) {
+      errorMessage += ` Status: ${err.response.status}. ${err.response.data?.message || ''}`;
+    } else if (err.request) {
+      errorMessage += ' No response from server. Check if backend is running.';
+    } else {
+      errorMessage += ` Error: ${err.message}`;
+    }
+    
+    alert(errorMessage);
+    error.value = errorMessage;
   } finally {
     isLoading.value = false;
   }
@@ -125,8 +136,10 @@ onMounted(() => {
   <div class="container container--xl p-3">
     <div class="d-flex justify-between align-center mb-4">
       <h1>User Management</h1>
-      <button class="btn btn--primary btn--sm" @click="fetchFromApi">Fetch From External API</button>
-      <button class="btn btn--primary btn--sm" @click="openAddUserModal">Add User</button>
+      <div class="d-flex gap-2">
+        <button class="btn btn--primary btn--sm" @click="fetchFromApi">Fetch From External API</button>
+        <button class="btn btn--primary btn--sm" @click="openAddUserModal">Add User</button>
+      </div>
     </div>
 
     <div class="mb-3">

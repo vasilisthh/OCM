@@ -7,6 +7,10 @@ const router = useRouter();
 const navigateToUsers = () => {
   router.push('/users');
 };
+
+const navigateToApiTest = () => {
+  router.push('/api-test');
+};
 </script>
 
 <template>
@@ -15,7 +19,9 @@ const navigateToUsers = () => {
       <div class="hero-content">
         <h1 class="hero-title">OCM Users Management App</h1>
         <p class="hero-subtitle">A full-stack application with Vue.js 3, TypeScript, Laravel, and MySQL to manage users fetched from external APIs.</p>
-        <button class="btn btn--primary btn--lg" @click="navigateToUsers">Manage Users</button>
+        <div class="hero-buttons">
+          <button class="btn btn--primary btn--lg" @click="navigateToUsers">Manage Users</button>
+        </div>
       </div>
     </section>
     

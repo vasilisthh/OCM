@@ -13,6 +13,11 @@ const router = createRouter({
       path: '/users',
       name: 'users',
       component: () => import('../views/UsersView.vue'),
+    },
+    {
+      path: '/api-test',
+      name: 'api-test',
+      component: () => import('../components/ApiTest.vue'),
     }
   ],
 })

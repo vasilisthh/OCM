@@ -66,6 +66,11 @@ class UserService
         
         foreach ($users as $userData) {
             try {
+                Log::info('Processing user', [
+                    'id' => $userData['id'] ?? 'unknown',
+                    'email' => $userData['email'] ?? 'none'
+                ]);
+                
                 $existingUser = User::where('id', $userData['id'])->first();
                 
                 if ($existingUser) {
@@ -78,6 +83,22 @@ class UserService
                     ]);
                     $updated++;
                 } else {
+                    // Try to prevent duplicate email/username errors
+                    $duplicateEmail = User::where('email', $userData['email'])->first();
+                    $duplicateUsername = User::where('username', $userData['username'])->first();
+                    
+                    if ($duplicateEmail) {
+                        Log::warning('Duplicate email found', ['email' => $userData['email']]);
+                        // Modify email to avoid conflict
+                        $userData['email'] = 'duplicate_' . $userData['email'];
+                    }
+                    
+                    if ($duplicateUsername) {
+                        Log::warning('Duplicate username found', ['username' => $userData['username']]);
+                        // Modify username to avoid conflict
+                        $userData['username'] = 'dup_' . $userData['username'];
+                    }
+                    
                     User::create([
                         'id' => $userData['id'],
                         'name' => $userData['name'],
@@ -91,7 +112,8 @@ class UserService
             } catch (\Exception $e) {
                 Log::error('Failed to store user', [
                     'user' => $userData['id'] ?? 'unknown',
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
                 $failed++;
             }
